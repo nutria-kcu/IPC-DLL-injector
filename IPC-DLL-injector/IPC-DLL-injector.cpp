@@ -4,21 +4,7 @@
 #include "SharedMemory.h"
 #include <tchar.h>
 
-#pragma comment(lib, "./lib/SharedMemory.lib")
-
 using namespace std;
-
-BOOL EnablePrivilege()
-{
-    LUID PrivilegeRequired;
-    BOOL bRes = FALSE;
-
-    bRes = LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &PrivilegeRequired);
-
-    // ...
-
-    return bRes;
-}
 
 bool isValidNumber(const string& str) {
     for (char c : str) {
@@ -33,7 +19,6 @@ int main() {
     int cmd = 0, option = 0;
     char ch;
     cout << "Press 'q' to print 'Welcome message'.\n";
-    /*EnablePrivilege();*/
     SharedMemoryHandler* sh = new SharedMemoryHandler(_T("NUTRI-IPC"), 1);
     HANDLE fullEvent = sh->getFullEvent();
     HANDLE emptyEvent = sh->getEmptyEvent();
