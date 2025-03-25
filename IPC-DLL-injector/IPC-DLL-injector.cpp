@@ -1,20 +1,89 @@
-// IPC-DLL-injector.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
+#include <Windows.h>
+#include <conio.h> // For _getch()
+#include "SharedMemory.h"
+#include <tchar.h>
 
-int main()
+#pragma comment(lib, "./lib/SharedMemory.lib")
+
+using namespace std;
+
+BOOL EnablePrivilege()
 {
-    std::cout << "Hello World!\n";
+    LUID PrivilegeRequired;
+    BOOL bRes = FALSE;
+
+    bRes = LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &PrivilegeRequired);
+
+    // ...
+
+    return bRes;
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
+bool isValidNumber(const string& str) {
+    for (char c : str) {
+        if (!isdigit(c)) {
+            return false;
+        }
+    }
+    return true;
+}
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+int main() {
+    int cmd = 0, option = 0;
+    char ch;
+    cout << "Press 'q' to print 'Welcome message'.\n";
+    /*EnablePrivilege();*/
+    SharedMemoryHandler* sh = new SharedMemoryHandler(_T("NUTRI-IPC"), 1);
+    HANDLE fullEvent = sh->getFullEvent();
+    HANDLE emptyEvent = sh->getEmptyEvent();
+
+    while (true) {
+        ch = _getch(); // Get character input without pressing Enter
+
+        if (ch == '0') {
+            cout << "Exiting...\n";
+            delete sh;
+            break;
+        }
+        if (ch == 's') {
+            DWORD waitResult = WaitForSingleObject(emptyEvent, INFINITE);
+
+            // Prompt user for cmd input
+            cout << "Enter command (number): ";
+            string cmdInput;
+            getline(cin, cmdInput);  // Read the full input line
+
+            if (cmdInput.empty() || !isValidNumber(cmdInput)) {
+                cmd = 0;  // If input is empty or not a valid number, set cmd to 0
+            }
+            else {
+                cmd = stoi(cmdInput);  // Convert string to integer
+            }
+
+            // Prompt user for option input
+            cout << "Enter option (number): ";
+            string optionInput;
+            getline(cin, optionInput);  // Read the full input line
+
+            if (optionInput.empty() || !isValidNumber(optionInput)) {
+                option = 0;  // If input is empty or not a valid number, set option to 0
+            }
+            else {
+                option = stoi(optionInput);  // Convert string to integer
+            }
+
+            cout << "SetMSG with cmd: " << cmd << ", option: " << option << endl;
+            bool result = sh->setMessage(cmd, option);
+           
+            ResetEvent(emptyEvent);
+            SetEvent(fullEvent);
+            cout << "RESULT: " << result << "\n";
+        }
+        if (ch == 'g') {
+            cout << "SetMSG\n";
+        }
+       
+    }
+    return 0;
+}
